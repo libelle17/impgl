@@ -188,7 +188,7 @@ const string befpfad{"/opt/firebird/bin/"},
 						 isql{befpfad+"isql"}; // isql-fb
 long hhcl::import_firebird(const string& fbdb,const string& fbtb,const string& mydb,const string *mytbp/*=0*/,const string& comment/*=nix*/)
 {
-	const char tz[4]{29,30,31,0};
+	const char tz[4]{29,30,31,0}; // sehr unwahrscheinliche Zeichenfolge
 	const size_t aktc{0};
 	const string pznn{"PCK_PZN"};
 	if (!mytbp) mytbp=&fbtb;
@@ -204,8 +204,10 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 	servc firebird("firebird","firebird");
 	firebird.restart(obverb-1,oblog);
 	// Script für Kopf,für Daten, Kopfdaten,Tabellendaten
-	const string fbscr[2]={fbtb+"_hd.scr",fbtb+"_dt.scr"},
-				fbdat[2]={fbtb+"_hd.dat",fbtb+"_dt.dat"};
+	const string scriptendg{".script"},datendg{".dat"},
+				header{"_hd"},daten{"_dt"},
+				fbscr[2]={fbtb+header+scriptendg,fbtb+daten+scriptendg}, // /tmp/... GL_PCK_hd.script, GL_PCK_dt.script
+				fbdat[2]={fbtb+header+datendg,fbtb+daten+datendg};       // /tmp/... GL_PCK_hd.dat, GL_PCK_dt.dat
 	size_t fzl=0,dszahl=0; // Feldzahl,Datensatzzahl
 	Feld *fdp;
 	for(int ru=0;ru<2;ru++) {
@@ -218,7 +220,7 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 			sql.clear();
 			ga.close();
 			tuloeschen(fbdat[ru]);
-			// schreibt fbdat[ru] fertig
+			// schreibt durch Aufruf des Scripts fbdat[ru] fertig
 			systemrueck(isql+" -u sysdba -p masterke -q -i "+fbscr[ru],obverb,oblog);
 			if (!ru) {
 				mdatei gl0(fbdat[ru],ios::in|ios::binary);
@@ -284,6 +286,8 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 					RS rins(My,*mytbp); // muss fuer sammeln vor while stehen
 					while (getline(da,zeile)) {
 					  dszahl++;
+						if (!(dszahl % 100) || obverb)
+							fLog(gruens+ltoan(dszahl)+blau+" Datensaetze gelesen",obverb?1:-1,0);
 						svec eig;
 						if (!zeile.empty()) aufSplit(&eig,zeile,(char*)tz);
 						if (eig.size()<fzl) continue;
