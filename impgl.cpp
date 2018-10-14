@@ -193,8 +193,8 @@ long hhcl::import_firebird(const string& fbdb,const string& fbtb,const string& m
 	const string pznn{"PCK_PZN"};
 	if (!mytbp) mytbp=&fbtb;
 	svec csets;
-	csets<<"utf8";
 	csets<<"latin1";
+	csets<<"utf8";
 	string sql= "SELECT iif(r.rdb$field_position is null,0,r.rdb$field_position)||';'||iif(r.rdb$field_name is null,'',TRIM(r.RDB$FIELD_NAME))||';'||iif(r.rdb$null_flag is null,'',trim(r.rdb$null_flag))||';'||iif(f.rdb$field_length is null,0,trim(f.RDB$FIELD_LENGTH))||';'||iif(f.rdb$field_precision is null,0,trim(f.RDB$FIELD_PRECISION))||';'||iif(f.rdb$field_scale is null,'',trim(f.RDB$FIELD_SCALE))||';'||iif(f.rdb$field_type is null,'',trim(CASE f.RDB$FIELD_TYPE WHEN 261 THEN'BLOB'WHEN 14 THEN'CHAR'WHEN 40 THEN'CSTRING'WHEN 11 THEN'D_FLOAT'WHEN 27 THEN'DOUBLE'WHEN 10 THEN'FLOAT'WHEN 16 THEN'INT64'WHEN 8 THEN'INTEGER'WHEN 9 THEN'QUAD'WHEN 7 THEN'SMALLINT'WHEN 12 THEN'DATE'WHEN 13 THEN'TIME'WHEN 35 THEN'TIMESTAMP'WHEN 37 THEN'VARCHAR'ELSE'UNKNOWN'END))||';'||iif(f.rdb$field_sub_type is null,'',trim(f.RDB$FIELD_SUB_TYPE))||';'||iif(coll.rdb$collation_name is null,'',trim(coll.rdb$collation_name))||';'||iif(cset.rdb$character_set_name is \
 null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT JOIN RDB$FIELDS f ON r.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME LEFT JOIN RDB$COLLATIONS coll ON f.RDB$COLLATION_ID = coll.RDB$COLLATION_ID LEFT JOIN RDB$CHARACTER_SETS cset ON f.RDB$CHARACTER_SET_ID = cset.RDB$CHARACTER_SET_ID WHERE r.RDB$RELATION_NAME='"+fbtb+"' ORDER BY r.RDB$FIELD_POSITION;";
 	if (My->fehnr) {
@@ -344,7 +344,7 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 // systemctl daemon-reload
 // systemctl start fb21
 // erstellbar war und ich fuer zwei binary-Installationen gleichzeitig keine Anleitung fand
-// => gleich FirebirdSS 2.1 32-bit installiert lassen und verwenden, zur Sicherheit aber noch die bak-Dateien erstellen
+// => gleich FirebirdSS 2.1 32-bit installiert lassen und verwenden, zur Sicherheit aber noch die fbk-Dateien erstellen
 void hhcl::wandle()
 {
  const string ort{"/DATA/down/neu/GL"},
@@ -371,13 +371,12 @@ void hhcl::wandle()
 		systemrueck("7z e "+qdatei+" -y -o"+ausgdir,obverb+1,oblog);
 	}
 	systemrueck("chmod 777 -R "+ausgdir);
-	const string bak{ort+"/gl"+dnam+".bak"};
-	if (lstat(bak.c_str(),&statq)) {
-		systemrueck(gbak+" -b '"+fdbalt+"' '"+bak+"' -user sysdba -pas masterke",obverb+1,oblog);
+	const string fbk{ort+"/gl"+dnam+".fbk"};
+	if (lstat(fbk.c_str(),&statq)) {
+		import_firebird(fdbalt,fbtb,dbname,&tbname,Tx[T_PZN_aus_gelber_Liste]);
+		systemrueck(gbak+" -b '"+fdbalt+"' '"+fbk+"' -user sysdba -pas masterke",obverb+1,oblog);
 	}
-	import_firebird(fdbalt,fbtb,dbname,&tbname,Tx[T_PZN_aus_gelber_Liste]);
  }
- exit(0);
 }
 
 void hhcl::pvirtfuehraus() //α
