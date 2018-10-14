@@ -55,6 +55,8 @@ char const *DPROG_T[T_MAX+1][SprachZahl]={
 	{"PZN aus gelber Liste","pharma central number from yellow list"},
 	// T_Fehler_beim_Erstellen_von
 	{"Fehler beim Erstellen von ","Error while creating "},
+	// T_Datensaetze_verarbeitet
+	{" Datensaetze verarbeitet"," data sets processed"},
 	{"",""} //α
 }; // char const *DPROG_T[T_MAX+1][SprachZahl]=
 
@@ -217,11 +219,12 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 			ga<<"set heading off;"<<endl;
 			ga<<"output "<<fbdat[ru]<<";"<<endl;
 			ga<<sql<<endl;
+			// in Runde 0 s.o., in Runde 1 s.u.
 			sql.clear();
 			ga.close();
 			tuloeschen(fbdat[ru]);
 			// schreibt durch Aufruf des Scripts fbdat[ru] fertig
-			systemrueck(isql+" -u sysdba -p masterke -q -i "+fbscr[ru],obverb,oblog);
+			systemrueck(isql+" -u sysdba -p masterke -q -i "+fbscr[ru],obverb?obverb:1,oblog);
 			if (!ru) {
 				mdatei gl0(fbdat[ru],ios::in|ios::binary);
 				if (gl0.is_open()) {
@@ -286,8 +289,8 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 					RS rins(My,*mytbp); // muss fuer sammeln vor while stehen
 					while (getline(da,zeile)) {
 					  dszahl++;
-						if (!(dszahl % 100) || obverb)
-							fLog(gruens+ltoan(dszahl)+blau+" Datensaetze gelesen",obverb?1:-1,0);
+						if (!(dszahl % 10) || obverb)
+							fLog(gruens+ltoan(dszahl)+blau+Tx[T_Datensaetze_verarbeitet],obverb?1:-1,0);
 						svec eig;
 						if (!zeile.empty()) aufSplit(&eig,zeile,(char*)tz);
 						if (eig.size()<fzl) continue;

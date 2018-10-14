@@ -25,6 +25,7 @@ enum T_
 	T_eindeutige_Identifikation,
 	T_PZN_aus_gelber_Liste,
 	T_Fehler_beim_Erstellen_von,
+	T_Datensaetze_verarbeitet,
 	T_MAX //α
 }; // enum T_ //ω
 //α
