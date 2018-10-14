@@ -26,6 +26,9 @@ enum T_
 	T_PZN_aus_gelber_Liste,
 	T_Fehler_beim_Erstellen_von,
 	T_Datensaetze_verarbeitet,
+	T_verarbeite,
+	T_Feldzahl_in,
+	T_zu_gering_mit,
 	T_MAX //α
 }; // enum T_ //ω
 //α

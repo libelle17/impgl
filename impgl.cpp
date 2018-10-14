@@ -57,6 +57,12 @@ char const *DPROG_T[T_MAX+1][SprachZahl]={
 	{"Fehler beim Erstellen von ","Error while creating "},
 	// T_Datensaetze_verarbeitet
 	{" Datensaetze verarbeitet"," data sets processed"},
+	// T_verarbeite
+	{"Verarbeite: ","Processing: "},
+	// T_Feldzahl_in
+	{"Feldzahl in ","No.of fields in "},
+	// T_zu_gering_mit
+	{" zu gering mit: "," not enough with: "},
 	{"",""} //α
 }; // char const *DPROG_T[T_MAX+1][SprachZahl]=
 
@@ -278,7 +284,7 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 						sql+=" FROM "+fbtb+";";
 					} // if (gl.is_open())
 				} else {
-					fLog("Feldzahl in "+fbdat[0]+" zu gering mit: "+ltoan(fzl),1,oblog);
+					fLog(Tx[T_Feldzahl_in]+fbdat[0]+Tx[T_zu_gering_mit]+ltoan(fzl),1,oblog);
 				} // if (fzl>1)
 
 			} else { // !ru else
@@ -368,7 +374,7 @@ void hhcl::wandle()
 				 p2{erg[i].find('/',p1)}; // 27
 	const string qdatei{'/'+erg[i]}, // /DATA/down/neu/GL/GL_2015_04/Data/datenbank.zip
 				dnam{erg[i].substr(p1,p2-p1)}; // _2015_04
-	caus<<violett<<qdatei<<schwarz<<endl;
+	fLog(Tx[T_verarbeite]+violetts+qdatei+schwarz,1,1);
 	const string ausgdir{dir_name(qdatei)+"/x"},
 				 fdbalt{ausgdir+"/gelbeliste.fdb"};
 	pruefverz(ausgdir);
