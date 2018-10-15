@@ -292,6 +292,7 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 				if (da.is_open()) {
 					RS begin1(My,"BEGIN",aktc,ZDB);
 					string zeile;
+					// was das sollte, weiß ich nicht mehr, jedenfalls fuehrt es zur Fehlermeldung, die SQL-Anweisung 'glalle' sei fehlerhaft
 #ifdef Schmarrn
 					uchar anfangen=1;
 #endif
@@ -299,8 +300,8 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 					while (getline(da,zeile)) {
 					  dszahl++;
 						if (!(dszahl % 1000) || obverb) {
-							fLog(gruens+ltoan(dszahl)+blau+Tx[T_Datensaetze_verarbeitet],obverb?1:-1,0);
 							RS commit1(My,"COMMIT",aktc,ZDB);
+							fLog(gruens+ltoan(dszahl)+blau+Tx[T_Datensaetze_verarbeitet],obverb?1:-1,0);
 							RS begin2(My,"BEGIN",aktc,ZDB);
 						}
 						svec eig;
@@ -338,6 +339,7 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 					} // 					if (!anfangen)
 #endif
 					RS commit2(My,"COMMIT",aktc,ZDB);
+					fLog(gruens+ltoan(dszahl)+blau+Tx[T_Datensaetze_verarbeitet],1,oblog);
 				} // 				if (da.is_open())
 			} // 			if (!ru)  else
 		} // 		if (ga.is_open())
