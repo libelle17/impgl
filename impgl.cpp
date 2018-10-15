@@ -204,7 +204,7 @@ long hhcl::import_firebird(const string& fbdb,const string& fbtb,const string& m
 	csets<<"latin1";
 	csets<<"utf8";
 	string sql= "SELECT iif(r.rdb$field_position is null,0,r.rdb$field_position)||';'||iif(r.rdb$field_name is null,'',TRIM(r.RDB$FIELD_NAME))||';'||iif(r.rdb$null_flag is null,'',trim(r.rdb$null_flag))||';'||iif(f.rdb$field_length is null,0,trim(f.RDB$FIELD_LENGTH))||';'||iif(f.rdb$field_precision is null,0,trim(f.RDB$FIELD_PRECISION))||';'||iif(f.rdb$field_scale is null,'',trim(f.RDB$FIELD_SCALE))||';'||iif(f.rdb$field_type is null,'',trim(CASE f.RDB$FIELD_TYPE WHEN 261 THEN'BLOB'WHEN 14 THEN'CHAR'WHEN 40 THEN'CSTRING'WHEN 11 THEN'D_FLOAT'WHEN 27 THEN'DOUBLE'WHEN 10 THEN'FLOAT'WHEN 16 THEN'INT64'WHEN 8 THEN'INTEGER'WHEN 9 THEN'QUAD'WHEN 7 THEN'SMALLINT'WHEN 12 THEN'DATE'WHEN 13 THEN'TIME'WHEN 35 THEN'TIMESTAMP'WHEN 37 THEN'VARCHAR'ELSE'UNKNOWN'END))||';'||iif(f.rdb$field_sub_type is null,'',trim(f.RDB$FIELD_SUB_TYPE))||';'||iif(coll.rdb$collation_name is null,'',trim(coll.rdb$collation_name))||';'||iif(cset.rdb$character_set_name is \
-null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT JOIN RDB$FIELDS f ON r.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME LEFT JOIN RDB$COLLATIONS coll ON f.RDB$COLLATION_ID = coll.RDB$COLLATION_ID LEFT JOIN RDB$CHARACTER_SETS cset ON f.RDB$CHARACTER_SET_ID = cset.RDB$CHARACTER_SET_ID WHERE r.RDB$RELATION_NAME='"+fbtb+"' ORDER BY r.RDB$FIELD_POSITION;";
+							 null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT JOIN RDB$FIELDS f ON r.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME LEFT JOIN RDB$COLLATIONS coll ON f.RDB$COLLATION_ID = coll.RDB$COLLATION_ID LEFT JOIN RDB$CHARACTER_SETS cset ON f.RDB$CHARACTER_SET_ID = cset.RDB$CHARACTER_SET_ID WHERE r.RDB$RELATION_NAME='"+fbtb+"' ORDER BY r.RDB$FIELD_POSITION;";
 	if (My->fehnr) {
 		fLog(rots+ltoan(My->fehnr)+schwarz+Tx[T_Fehler_beim_Oeffnen_der_Datenbank]+mydb,obverb,oblog);
 		return -29;
@@ -242,7 +242,7 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 					fzl-=1;
 					mdatei gl(fbdat[0],ios::in|ios::binary);
 					if (gl.is_open()) {
-					// 1. mache Tabelle aus fbdat[0]
+						// 1. mache Tabelle aus fbdat[0]
 						size_t i=0;
 						fdp=new Feld[fzl]; // erste und letzte Zeile leer
 						memcpy(&fdp[0],new Feld("ID","INT","10","",Tx[T_eindeutige_Identifikation],1,1),sizeof *fdp);
@@ -293,12 +293,11 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 					RS begin1(My,"BEGIN",aktc,ZDB);
 					string zeile;
 					// was das sollte, weiß ich nicht mehr, jedenfalls fuehrt es zur Fehlermeldung, die SQL-Anweisung 'glalle' sei fehlerhaft
-#ifdef Schmarrn
-					uchar anfangen=1;
-#endif
+					uchar angefangen{1};
+					const uchar mitsammeln{0}; // 1
 					RS rins(My,*mytbp); // muss fuer sammeln vor while stehen
 					while (getline(da,zeile)) {
-					  dszahl++;
+						dszahl++;
 						if (!(dszahl % 1000) || obverb) {
 							RS commit1(My,"COMMIT",aktc,ZDB);
 							fLog(gruens+ltoan(dszahl)+blau+Tx[T_Datensaetze_verarbeitet],obverb?1:-1,0);
@@ -319,25 +318,13 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 						} // 				for(size_t j=0;j<tok[0].size();j++)
 						if (obloe)
 							RS rsloe(My,loesche,aktc,ZDB);
-						rins.tbins(&einf,aktc,0,ZDB?ZDB:obverb?obverb:-2,0,0,svec(),0,&csets);
-//						caus<<".";
-#ifdef Schmarrn
-						anfangen=0;
-#endif
+						rins.tbins(&einf,aktc,mitsammeln,ZDB?ZDB:obverb?obverb:-2,/*idp*/0,/*eindeutig*/0,/*eindfeld*/svec(),/*asy*/0,&csets);
+						//						caus<<".";
+						angefangen=1;
 					} // 					while (1)
-#ifdef Schmarrn
-					if (!anfangen) {
-							for(int runde=0;runde<2;runde++) {
-								RS zs(My,*mytbp,aktc,ZDB);
-								vector<instyp> einf;
-								rins.tbins(&einf,aktc,0,ZDB?ZDB:runde?obverb:-2,0,0,svec(),0,&csets);
-								if (!rins.fnr) {
-									RS commit2(My,"COMMIT",aktc,ZDB);
-									break;
-								}
-							} // 			for(int runde=0;runde<2;runde++)
-					} // 					if (!anfangen)
-#endif
+					if (mitsammeln) if (angefangen) {
+							rins.tbins(/*einfp*/0,aktc,/*sammeln*/0,ZDB?ZDB:obverb?obverb:-2,/*idp*/0,/*eindeutig*/0,/*eindfeld*/svec(),/*asy*/0,&csets);
+					} // 					if (mitsammeln) if (!angefangen)
 					RS commit2(My,"COMMIT",aktc,ZDB);
 					fLog(gruens+ltoan(dszahl)+blau+Tx[T_Datensaetze_verarbeitet],1,oblog);
 				} // 				if (da.is_open())
@@ -346,15 +333,15 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 	} // 	for(int ru=0;ru<2;ru++)
 	delete[] fdp;
 	/*//
-		 svec rueck;
-		 systemrueck("sed -n '/output/{s/[^ ]* \\([^;]*\\);/\\1/;p;q}' gl.scr",obverb,oblog,&rueck);
+		svec rueck;
+		systemrueck("sed -n '/output/{s/[^ ]* \\([^;]*\\);/\\1/;p;q}' gl.scr",obverb,oblog,&rueck);
 	// wenn (erste) Zeile mit 'output', dann drucke Wort nach ' ' und vor ';' und beende
 	// fuer die zweite Zeile könnte das so aussehen:
-	*/
+	 */
 	//// sed -n '/output/{x;s/.*/&\\./;/.\\{2\\}/{x;s/[^ ]* \\([^;]*\\);/\\1/;p;q};x}' gl.scr
 	/*//
-	if (rueck.size()) tbhdscr=rueck[0];
-	*/
+		if (rueck.size()) tbhdscr=rueck[0];
+	 */
 	return dszahl;
 } // long import_firebird(const string& fbdb, const string& fbtb, const string& mydb, const string& *mytbp/*=""*/,int obverb/*=0*/,int oblog/*=0*/)
 
