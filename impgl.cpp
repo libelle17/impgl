@@ -290,13 +290,17 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 			} else { // !ru else
 				mdatei da(fbdat[ru],ios::in|ios::binary);
 				if (da.is_open()) {
+					RS begin1(My,"BEGIN",aktc,ZDB);
 					string zeile;
 					uchar anfangen=1;
 					RS rins(My,*mytbp); // muss fuer sammeln vor while stehen
 					while (getline(da,zeile)) {
 					  dszahl++;
-						if (!(dszahl % 10) || obverb)
+						if (!(dszahl % 10) || obverb) {
 							fLog(gruens+ltoan(dszahl)+blau+Tx[T_Datensaetze_verarbeitet],obverb?1:-1,0);
+							RS commit1(My,"COMMIT",aktc,ZDB);
+							RS begin2(My,"BEGIN",aktc,ZDB);
+						}
 						svec eig;
 						if (!zeile.empty()) aufSplit(&eig,zeile,(char*)tz);
 						if (eig.size()<fzl) continue;
@@ -312,6 +316,9 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 						} // 				for(size_t j=0;j<tok[0].size();j++)
 						if (obloe)
 							RS rsloe(My,loesche,aktc,ZDB);
+						if (!einf.size()) {
+							caus<<rot<<"Achtung, einf leer!"<<endl;
+						}
 						rins.tbins(&einf,aktc,0,ZDB?ZDB:obverb?obverb:-2,0,0,svec(),0,&csets);
 //						caus<<".";
 						anfangen=0;
@@ -324,6 +331,7 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 								if (!rins.fnr) break;
 							} // 			for(int runde=0;runde<2;runde++)
 					} // 					if (!anfangen)
+					RS commit2(My,"COMMIT",aktc,ZDB);
 				} // 				if (da.is_open())
 			} // 			if (!ru)  else
 		} // 		if (ga.is_open())
