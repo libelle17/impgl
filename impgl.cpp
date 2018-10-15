@@ -292,11 +292,13 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 				if (da.is_open()) {
 					RS begin1(My,"BEGIN",aktc,ZDB);
 					string zeile;
+#ifdef Schmarrn
 					uchar anfangen=1;
+#endif
 					RS rins(My,*mytbp); // muss fuer sammeln vor while stehen
 					while (getline(da,zeile)) {
 					  dszahl++;
-						if (!(dszahl % 100) || obverb) {
+						if (!(dszahl % 1000) || obverb) {
 							fLog(gruens+ltoan(dszahl)+blau+Tx[T_Datensaetze_verarbeitet],obverb?1:-1,0);
 							RS commit1(My,"COMMIT",aktc,ZDB);
 							RS begin2(My,"BEGIN",aktc,ZDB);
@@ -316,13 +318,13 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 						} // 				for(size_t j=0;j<tok[0].size();j++)
 						if (obloe)
 							RS rsloe(My,loesche,aktc,ZDB);
-						if (!einf.size()) {
-							caus<<rot<<"Achtung, einf leer!"<<endl;
-						}
 						rins.tbins(&einf,aktc,0,ZDB?ZDB:obverb?obverb:-2,0,0,svec(),0,&csets);
 //						caus<<".";
+#ifdef Schmarrn
 						anfangen=0;
+#endif
 					} // 					while (1)
+#ifdef Schmarrn
 					if (!anfangen) {
 							for(int runde=0;runde<2;runde++) {
 								RS zs(My,*mytbp,aktc,ZDB);
@@ -334,6 +336,7 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 								}
 							} // 			for(int runde=0;runde<2;runde++)
 					} // 					if (!anfangen)
+#endif
 					RS commit2(My,"COMMIT",aktc,ZDB);
 				} // 				if (da.is_open())
 			} // 			if (!ru)  else
