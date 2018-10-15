@@ -296,7 +296,7 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 					RS rins(My,*mytbp); // muss fuer sammeln vor while stehen
 					while (getline(da,zeile)) {
 					  dszahl++;
-						if (!(dszahl % 10) || obverb) {
+						if (!(dszahl % 100) || obverb) {
 							fLog(gruens+ltoan(dszahl)+blau+Tx[T_Datensaetze_verarbeitet],obverb?1:-1,0);
 							RS commit1(My,"COMMIT",aktc,ZDB);
 							RS begin2(My,"BEGIN",aktc,ZDB);
@@ -328,7 +328,10 @@ null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT 
 								RS zs(My,*mytbp,aktc,ZDB);
 								vector<instyp> einf;
 								rins.tbins(&einf,aktc,0,ZDB?ZDB:runde?obverb:-2,0,0,svec(),0,&csets);
-								if (!rins.fnr) break;
+								if (!rins.fnr) {
+									RS commit2(My,"COMMIT",aktc,ZDB);
+									break;
+								}
 							} // 			for(int runde=0;runde<2;runde++)
 					} // 					if (!anfangen)
 					RS commit2(My,"COMMIT",aktc,ZDB);
