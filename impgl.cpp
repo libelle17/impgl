@@ -143,8 +143,9 @@ void hhcl::virtrueckfragen()
 {
 	hLog(violetts+Tx[T_virtrueckfragen]+schwarz);
 	if (rzf) { //ω
+		dhcl::virtrueckfragen();
+		hcl::virtrueckfragen();
 	} // if (rzf) //α
-	dhcl::virtrueckfragen();
 	//// opn.oausgeb(rot);
 } // void hhcl::virtrueckfragen()
 //ω

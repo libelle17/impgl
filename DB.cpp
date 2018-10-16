@@ -2533,11 +2533,10 @@ void dhcl::virtrueckfragen()
 			mpwd=Tippstr(string(Txd[T_Passwort_fuer_MySQL_MariaDB])+Txk[T_fuer_Benutzer]+dblau+muser+schwarz+"'"/*,&mpwd*/);
 			mpw2=Tippstr(string(Txd[T_Passwort_fuer_MySQL_MariaDB])+Txk[T_fuer_Benutzer]+dblau+muser+schwarz+"'"+" ("+Txk[T_erneute_Eingabe]+")"/*,&mpw2*/);
 		} while (mpwd!=mpw2);
-		const string pwdstr=XOR(mpwd,pwk);
 		dbq=Tippstr(string(Txd[T_Datenbankname_fuer_MySQL_MariaDB_auf])+dblau+host+schwarz+"'",&dbq);
 		//		tabl=Tippstr(string(Txd[T_Tabellenname_in])+dblau+dbq+schwarz+"'",&tabl);
 	} // if (rzf)
-	hcl::virtrueckfragen();
+	// hcl::virtrueckfragen(); // wegen der Abfragereihenfolge lieber vorne reinschreiben
 } // void hhcl::virtrueckfragen()
 
 // wird aufgerufen in lauf
