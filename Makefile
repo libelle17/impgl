@@ -249,7 +249,7 @@ endef
 git: README.md
 #	@git config --global user.name "Gerald Schade"
 #	@git config --global user.email "gerald.schade@gmx.de"
-	$(call machvers);
+	@$(call machvers);
 	@printf " Copying files from/ Kopiere Dateien von: %b%s%b (Version %b%s%b) -> git (%b%s%b)\n" $(blau) "$(PWD)" $(reset) $(blau) $$(cat versdt)\
   $(reset) $(blau) "$$(F1=.git/FETCH_HEAD;test -f $$F1&&{ cut -f2-< $$F1|sed 's/^\s*//';:;};[ -d .git ]&&cat .git/./config|sed -n '/url =/p')" $(reset) >$(BA) 
 	-@cp -au Makefile Makefile.roh
@@ -573,6 +573,8 @@ dotrans:
 	@$(call setz_gitv,$(Ziel))
 	@sh -c "cd $(Ziel);./configure; " && printf "%b./configure%b in %b$(Ziel)%b aufgerufen\n" $(blau) $(reset) $(blau) $(reset);\
 
+.PHONY: newproj
+newproj: neuproj
 .PHONY: neuproj
 neuproj:
 	@Z=;while [ -z "$$Z" -o -d ../"$$Z" ]; do [ ! -z "$$Z" -a -d ../"$$Z" ]&& echo \'..\\"$$Z"\' gibt es schon/already exists.; echo Programmname/program name?; read Z;done;mkdir -p ../"$$Z";cp -ai kons.cpp kons.h DB.cpp DB.h Makefile .exrc configure install.sh man_?? viall* ../"$$Z";\
