@@ -36,6 +36,7 @@
 #include <memory> // fuer shared_ptr
 
 using namespace std;
+int mntpunkt(const char* mntpfad);
 extern const string& instvz; // in kons.cpp, z.B. /root/autofax
 extern const string& unindt; // instvz+"uninstallinv"
 extern const int sfeh[]; // T_Dienst_laeuft, T_Dienst_inexistent, ...
@@ -137,7 +138,7 @@ enum {
 #define caus cout // nur zum Debuggen
 #define exitt exit // fuer threads
 extern pthread_mutex_t getmutex, printf_mutex, timemutex;
-size_t thr_strftime(const struct tm* timeptr,string *ziel,const char* format="%d.%m.%Y %H.%M.%S");
+size_t thr_strftime(const struct tm* const timeptr,string *const ziel,const char* const format="%d.%m.%Y %H.%M.%S");
 extern const string devtty;
 
 typedef unsigned long long ull;
@@ -152,7 +153,7 @@ extern el2set::iterator it2;
 class elem3;
 extern set<elem3>::iterator it3;
 
-extern const string nix/*=string()*/;
+extern const string nix/*={}*/;
 extern const string eins/*="1"*/;
 extern const string sudc/*="sudo "*/;
 extern const string sudhc/*="sudo -H "*/;
@@ -167,10 +168,10 @@ class TxB // Text-Basisklasse
 //  TCtp* TCp;
   const char * const * const * const *TCp;
 	TxB(const char* const* const* const *TCp);
-  inline const char* operator[](long const& nr) const {
-    TCtp *hilf = reinterpret_cast<TCtp*>(TCp);
-    return (const char*)hilf[nr][lgn];
-  }
+	inline const char* const operator[](long const& nr) const {
+		TCtp *hilf = reinterpret_cast<TCtp*>(TCp);
+		return (const char* const)hilf[nr][lgn];
+	}
 }; // class TxB // Text-Basisklasse
 
 string meinpfad();
@@ -218,7 +219,6 @@ enum Tkons_
   T_Erfolg,
   T_Weder_zypper_noch_apt_get_noch_dnf_noch_yum_als_Installationspgrogramm_gefunden,
   T_Logdateidpp,
-  T_Lese_Konfiguration_aus,
   T_j_k,
   T_Fehler_bei_auswert,
   T_nicht_gefunden,
@@ -320,6 +320,8 @@ enum Tkons_
 	T_sprachstr,
 	T_v_k,
 	T_verbose_l,
+	T_stu_k,
+	T_stumm_l,
 	T_lvz_k,
 	T_logvz_l,
 	T_ld_k,
@@ -331,6 +333,7 @@ enum Tkons_
 	T_kd_k,
 	T_konfdatei_l,
 	T_Bildschirmausgabe_gespraechiger,
+  T_Bildschirmausgabe_ganz_stumm,
 	T_waehlt_als_Logverzeichnis_pfad_derzeit,
 	T_logdatei_string_im_Pfad,
 	T_sonst_knapper,
@@ -356,8 +359,8 @@ enum Tkons_
 	T_Zeit_Doppelpunkt,
 	T_Fertig_mit,
 	T_eigene,
-	T_entfernen,
-	T_belassen,
+	T_nicht_mehr_da,
+	T_laeuft_noch,
 	T_warte,
 	T_wird_aktualisiert_bitte_ggf_neu_starten,
 	T_muss_nicht_aktualisiert_werden,
@@ -407,6 +410,13 @@ enum Tkons_
 	T_vi_l,
 	T_Konfigurationsdatei,
 	T_Logdatei_usw_bearbeiten_sehen,
+  T_kf_k,
+  T_konfzeiglang_l,
+  T_Konfigurationsdateinamen,
+  T_anzeigen,
+	T_Konfigurationsdatei_schreiben,
+	T_ks_k,
+	T_kschreib_l,
 	T_vs_k,
 	T_vs_l,
 	T_Quelldateien_in,
@@ -461,8 +471,11 @@ enum Tkons_
 	T_verwendet_wird,
 	T_Ausgabezeile,
 	T_pruefmehrfach,
+	T_Sprachen,
+	T_Intervall_Minuten,
 	T_konsMAX
 }; // Tkons_
+// Konsistenz in gdb pruefen, z.B.:  p (const char* const)reinterpret_cast<TCtp*>(Txk.TCp)[T_unbek][Txk.lgn]
 
 extern const string sprachstr;
 /*
@@ -481,24 +494,25 @@ extern char const *DPROG_T[][SprachZahl];
 extern class TxB Tx;
 
 extern uchar nrzf; // nicht rueckzufragen, fuer Aufruf aus Cron
+template<typename T> size_t elemzahlT(T& v){return sizeof(v)/sizeof(*v);}
+#define elemzahl(v)               (sizeof(v)/sizeof((v)[0]))
 
-class errmsgcl
+struct errmsgcl
 {
-public:
- int errnr;
- string msg;
- errmsgcl(int errnr,const string& msg):errnr(errnr),msg(msg){}
+		int errnr;
+		string msg;
+		errmsgcl(int errnr,const string& msg):errnr(errnr),msg(msg){}
 };
 // aktueller Benutzer
 class cuscl
 {
- private:
- struct passwd *passwd;
- public:
- string cusstr;
- uid_t cuid;
- gid_t cgid;
- cuscl();
+	private:
+		struct passwd *passwd;
+	public:
+		string cusstr;
+		uid_t cuid;
+		gid_t cgid;
+		cuscl();
 };
 
 // arg-Class
@@ -626,18 +640,18 @@ char ers(const char roh);
 
 // Gesamt-Trim
 inline std::string *gtrim(std::string *str) {
-  str->erase(0, str->find_first_not_of("\t "));       //prefixing spaces
-  str->erase(str->find_last_not_of("\t ")+1);         //surfixing spaces
+  str->erase(0, str->find_first_not_of("\t\r "));       //prefixing spaces etc.
+  str->erase(str->find_last_not_of("\t\r ")+1);         //surfixing spaces etc.
   return str;
 } // inline std::string *gtrim(std::string *str)
 
 inline std::string *ltrim(std::string *str) {
-  str->erase(0, str->find_first_not_of("\t "));       //prefixing spaces
+  str->erase(0, str->find_first_not_of("\t\r "));       //prefixing spaces etc.
   return str;
 } // inline std::string *ltrim(std::string *str)
 
 inline std::string *rtrim(std::string *str) {
-  str->erase(str->find_last_not_of("\t ")+1);         //surfixing spaces
+  str->erase(str->find_last_not_of("\t\r ")+1);         //surfixing spaces etc.
   return str;
 } // inline std::string *ltrim(std::string *str)
 
@@ -673,7 +687,7 @@ size_t zahlin(const string *const str, const char* const was);
 long cmpmem( char* feld, const char* search, int len_feld); // , int len_search
 // fuer lies (Konfigurationsdatei lesen)
 string ltoan(long value, int base=10, uchar obtz=0, uchar minstel=0); 
-char* ltoa_(long value, char* result, int base); 
+char* ltoa_(long value, char* result, int base=10); 
 void anfgw(const string& datei, const string& udpr, const string& inhalt, const string& comment, int obverb/*=0*/, int oblog/*=0*/);
 void anfgg(const string& datei, const string& inhalt, const string& comment, int obverb/*=0*/, int oblog/*=0*/);
 void doanfg(const string& datei, const string& inhalt, const string& comment);
@@ -711,13 +725,13 @@ enum par_t:uchar {pstri,pdez,ppwd,pverz,pfile,puchar,pbin,pint,plong,pdat}; // P
 // Wertepaargrundklasse, für WPcl und optcl
 struct wpgcl 
 { 
-		string pname;
-		uchar ausgewertet=0;
-    const void *pptr=0; // Zeiger auf Parameter, der hier eingestellt werden kann
+		string pname{};
+		uchar ausgewertet{0};
+    const void *pptr={0}; // Zeiger auf Parameter, der hier eingestellt werden kann
     string bemerk;
     par_t part=pstri; // Parameterart
-    uchar gelesen=0;
-		uchar eingetragen=0; // Hilfsvariable zur genau einmaligen Eintragung einer Option mit name=pname in Konfigurationsdatei
+    uchar gelesen{0};
+		uchar eingetragen{0}; // Hilfsvariable zur genau einmaligen Eintragung einer Option mit name=pname in Konfigurationsdatei
 		wpgcl(const string& pname,const void* pptr,par_t part);
 		string virtholstr() const;
     virtual const string& virtmachbemerk(const Sprache lg,const binaer obfarbe=wahr);
@@ -756,7 +770,7 @@ template <> inline void WPcl::hole < binaer > (binaer *var) { *var = (binaer)ato
 /*
 template <> inline void WPcl::hole < struct tm > (struct tm *tmp) {
 	if (!wert.empty()) {
-		for(unsigned im=0;im<sizeof tmmoegl/sizeof *tmmoegl;im++) {
+		for(unsigned im=0;im<elemzahl(tmmoegl);im++) {
 			if (strptime(wert.c_str(), tmmoegl[im], tmp)) break;
 		}
 									//		strptime(wert.c_str(), "%d.%m.%y %T", tmp);
@@ -785,29 +799,32 @@ template <> inline void WPcl::setze < const string > (const string *var, string&
 // fuer Wertepaare, die aus Datei gezogen werden und zusaetzlich ueber die Befehlszeile eingegeben werden koennen
 struct optcl:wpgcl
 {
-		const int kurzi=-1;
-		const int langi=-1;
-    TxB *TxBp=0; // nicht const, da lgn geändert werden muß
-    const long Txi=0;
-		const uchar wi=0; // Wichtigkeit: 1= wird mit -lh oder -h, 0= nur mit -lh, 255 (-1) = gar nicht angezeigt
-    const long Txi2=-1;
+		const int kurzi{-1};
+		const int langi{-1};
+    TxB *TxBp{0}; // nicht const, da lgn geändert werden muß
+    const long Txi{0};
+		const uchar wi{0}; // Wichtigkeit: 1= wird mit -lh oder -h, 0= nur mit -lh, 255 (-1) = gar nicht angezeigt
+    const long Txi2{-1};
     const string rottxt; // ggf rot zu markierender Text zwischen Txi und Txi2
 //    string oerkl;
     int iwert; // Wert, der pptr zugewiesen wird, falls dieser Parameter gewaehlt wird; -1= Wert steht im nächsten Parameter, 1=pro Nennung in der Kommandozeile wert um 1 erhöhen
 //    string *zptr=0; // Zeiger auf Zusatzparameter, der hier eingegeben werden kann (z.B. Zahl der Zeilen nach -n (Zeilenzahl)
 //    schAcl<WPcl> *cpA=0; // Konfigurationsarray, das ggf. geschrieben werden muss
-//    uchar ogefunden=0; // braucht man nicht, ist in argcl
+//    uchar obgefunden=0; // braucht man nicht, ist in argcl
 		// ermittelte Optionen:
-		uchar woher=0; // 1= ueber Vorgaben, 2= ueber Konfigurationsdatei, 3= ueber Befehlszeile gesetzt
-    const uchar obno=0; // ob auch die Option mit vorangestelltem 'no' eingefuegt werden soll
-		uchar gegenteil=0;
-		uchar nichtspeichern=0;
+		uchar woher{0}; // 1= ueber Vorgaben, 2= ueber Konfigurationsdatei, 3= ueber Befehlszeile gesetzt
+		const long Txrf{-1};
+    const uchar obno{0}; // ob auch die Option mit vorangestelltem 'no' eingefuegt werden soll
+		uchar gegenteil{0};
+		uchar nichtspeichern{0};
 		const uchar virteinzutragen(/*schAcl<optcl>**/void *schlp,int obverb);
 		void virtweisomapzu(/*schAcl<optcl>**/void *schlp);
 //		void virtloeschomaps(/*schAcl<optcl>**/void *schlp);
 		void virtloeschomaps(schAcl<optcl> *schlp);
 		optcl(const string& pname,const void* pptr,const par_t art, const int kurzi, const int langi, TxB* TxBp, const long Txi,
-				const uchar wi, const long Txi2, const string rottxt, const int iwert,const uchar woher,const uchar obno=0);
+				const uchar wi, const long Txi2, const string rottxt, const int iwert, const uchar woher, const long Txrf=-1, const uchar obno=0);
+		optcl(const void* pptr,const par_t art, const int kurzi, const int langi, TxB* TxBp, const long Txi,
+				const uchar wi, const long Txi2, const string rottxt, const int iwert,const uchar woher, const uchar obno=0);
 		void setzwert();
 		int setzstr(const char* const neuw,uchar *const obzuschreib=0,const uchar ausDatei=0);
 		void virttusetzbemerkwoher(const string& ibemerk,const uchar vwoher);
@@ -901,7 +918,7 @@ class lsyscl
 
 // enum betrsys {keins,suse,ubuntu,fedora};
 // betrsys pruefos();
-int obprogda(const string& prog, int obverb=0, int oblog=0, string *pfad=0);
+int obprogda(const string& prog, int obverb=0, int oblog=0, string *pfad=0,const int keinsu=0);
 enum instprog {keinp,zypper,apt,dnf,yum,urp,pac};
 string gethome();
 
@@ -949,8 +966,8 @@ struct absch
 {
  string aname;
  vector<aScl> av;
- const string *suche(const char* const sname);
- const string *suche(const string& sname);
+ const string *const suche(const char* const sname);
+ const string *const suche(const string& sname);
  void clear();
 }; // class absch
 
@@ -959,7 +976,7 @@ struct paarcl
 	string name;
 	string wert;
 	string bemerk;
-	paarcl(const string& name, const string *wert, const string& bemerk);
+	paarcl(const string& name, const string *const wertp, const string& bemerk);
 }; // kpaar
 
 // Konfigurationsdatei-Klasse, Nachfolger von confdat
@@ -990,7 +1007,7 @@ void kopierm(const string *quelle, const string *ziel);
 #endif // notwendig
 void aufSplit(vector<string> *tokens, const char* const text, const char sep=' ',bool auchleer=1);
 void aufSplit(vector<string> *tokens, const string& text, const char sep=' ',bool auchleer=1);
-void aufiSplit(vector<string> *tokens, const string& text, const string& sep,bool nichtmehrfach=1,int obverb=0,int oblog=0);
+void aufiSplit(vector<string> *tokens, const string& text, const string& sep,bool nichtmehrfach=1,int obverb=0,int oblog=0,int ohneanfz=0);
 void aufSplit(vector<string> *tokens, const string& text, const char* const sep, bool auchleer=1);
 size_t irfind(const string& wo, const string& was); // suche von hinten und ignoriere Gross- und Kleinschreibung
 void getstammext(const string *const ganz, string *stamm, string *exten);
@@ -1003,22 +1020,23 @@ std::string base_name(const std::string& path); // Dateiname ohne Pfad
 std::string dir_name(const std::string& path);  // Pfadname einer Datei
 int systemrueck(const string& cmd, int obverb=0, int oblog=0, vector<string> *rueck=0, const uchar obsudc=0,
                 const int verbergen=0, int obergebnisanzeig=wahr, const string& ueberschr=nix,vector<errmsgcl> *errm=0,uchar obincron=0,
-								stringstream *ausgp=0,uchar obdirekt=0);
+								stringstream *ausgp=0,uchar obdirekt=0,uchar ohnewisch=0);
 void pruefplatte();
 void pruefmehrfach(const string& wen=nix,int obverb=0,uchar obstumm=0);
 int setfaclggf(const string& datei,int obverb=0,int oblog=0,const binaer obunter=falsch,int mod=4,uchar obimmer=0,
-                uchar faclbak=0,const string& user=string(),uchar fake=0,stringstream *ausgp=0,const uchar obprot=1);
+                uchar faclbak=0,const string& user={},uchar fake=0,stringstream *ausgp=0,const uchar obprot=1);
 int pruefverz(const string& verz,int obverb=0,int oblog=0, uchar obmitfacl=0, uchar obmitcon=0,
-              const string& besitzer=string(), const string& benutzer=string(), const uchar obmachen=1,const uchar obprot=1);
+              const string& besitzer={}, const string& benutzer={}, const uchar obmachen=1,const uchar obprot=1,const int keinsu=0);
 string aktprogverz();
 char Tippbuchst(const string& frage, const string& moegl,const char *berkl[], const char* erlaubt=0, const char *vorgabe=0);
 // vorgabe fur vorgabe = T_j_k; alternativ='n'
 uchar Tippob(const string& frage,const char *vorgabe=Txk[T_j_k]);
-string Tippstrs(const char *frage, char* moegl[], char *vorgabe=0); // das letzte Element von moegl muss 0 sein
-string Tippstrs(const char *frage, vector<string> *moegl, string *vorgabe=0); 
-string Tippzahl(const char *frage, const char *vorgabe=0);
-string Tippzahl(const char *frage, const string *vorgabe);
-string Tippzahl(const string& frage, const string *vorgabe);
+//string Tippstrs(const char *frage, char* moegl[], char *vorgabe=0); // das letzte Element von moegl muss 0 sein
+string Tippstrs(const char *const frage, const char* const moegl[], const char *const vorgabe=0);// das letzte Element von moegl muss 0 sein
+string Tippstrs(const char *frage, const vector<string> *const moegl, const string *const vorgabe=0);
+string Tippzahl(const char *const frage, const char *const vorgabe=0);
+string Tippzahl(const char *const frage, const string *const vorgabe);
+string Tippzahl(const string& frage, const string *const vorgabe);
 long Tippzahl(const string& frage,const long& vorgabe);
 string Tippstr(const char *const frage, const string *const vorgabe=0,const uchar obnichtleer=1);
 // char* Tippcstr(const char *frage, char* buf, unsigned long buflen, const char* vorgabe=nix);
@@ -1043,7 +1061,7 @@ enum distroenum{unbek=-1,Mint,Ubuntu,Debian,Suse,Fedora,Fedoraalt,Mageia,Manjaro
 struct linst_cl
 {
  instprog ipr=keinp; // installiertes Program
- string schau; // Befehl zum Pruefen auf Vorhandensein ueber das Installationssystem
+ string psuch; // Befehl zum Pruefen auf Vorhandensein ueber das Installationssystem
  string instp; // Befehl zum Installieren ueber das Installationnssystem
  string instyp; // Befehl zum Installieren ueber das Installationnssystem mit automatischem yes auf Rueckfragen
  string upr;   // Befehl zum Deinstallieren ueber das Installationssystem
@@ -1183,7 +1201,7 @@ struct find3cl
     static set<wele>::iterator it;
     static set<wele> *wurzp;
     static set<elem3> *ergp;
-    regex_t reg;
+    regex_t regs;
     static regex_t *regp;
     int typbit;
     static int *typbitp;
@@ -1224,15 +1242,15 @@ struct pidvec: public vector<pidcl>
  } //  inline pidvec& operator<<(const pidcl& pd)
 }; // pidvec
 
-int wartaufpids(pidvec *pidv,const ulong runden=0,const int obverb=0,const int oblog=0,const string& wo=nix);
+int wartaufpids(pidvec *pidv,const ulong runden=0,const int obverb=0,const int oblog=0,const string& wo=nix,const time_t maxsec=0);
 
 extern const string s_true; // ="true";
 extern const string s_dampand; // =" && ";
 extern const string s_gz; // ="gz";
 extern const string& defvors; // ="https://github.com/"+gitv+"/";
 extern const string& defnachs; // ="/archive/master.tar.gz";
-void viadd(string *cmdp,string* zeigp,const string& datei,const uchar ro=0,const uchar hinten=0, const uchar unten=0);
-int schluss(const int fnr,string text=string(),int oblog=0);
+void viadd(string *const cmdp,string* const zeigp,const string& datei,const uchar ro=0,const uchar hinten=0, const uchar unten=0);
+int schluss(const int fnr,const string text={},int oblog=0);
 
 extern class lsyscl lsys;
 
@@ -1241,13 +1259,17 @@ class hcl
 {
 	private:
 		uchar obsetz=1; // setzzaehler
-		uchar mitpids=0; // mehrere pids
+		const char* const DPROG;
+		const uchar mitcron; // ob Programm auch in Cron eingetragen werden kann; kann im Konstruktor angegeben werden
+		const uchar parstreng; // breche Programm ab, wenn Parameter nicht gefunden
 	protected:
 		pidvec pidv;
-		const char* const DPROG;
     double tstart, tende;
     size_t optslsz=0; // last opts.size()
+		uchar mitpids=0; // mehrere pids
+	public:
 		confdcl hccd;
+	protected:
 		string tmpcron; // fuer crontab
     string cronminut; // Minuten fuer crontab; 0 = kein Crontab-Eintrag
 		uchar nochkeincron;
@@ -1263,7 +1285,6 @@ class hcl
 		string muser; // Benutzer fuer Mysql/MariaDB
 		string mpwd;  // Passwort fuer Mysql/MariaDB //ω
 		stringstream uebers; // Ueberschrift fuer Verarbeitungslauf
-		const uchar mitcron; // ob Programm auch in Cron eingetragen werden kann; kann im Konstruktor angegeben werden
 		unsigned tmmoelen;
 #ifdef _WIN32
     char cpt[255];
@@ -1275,9 +1296,12 @@ class hcl
 	public:
 		int retu{0}; // Return-Value
 		int obverb=0; // verbose
+		int stumm=0; // gar keine Bildschirmausgabe
 		int oblog=0;  // mehr Protokollieren
     uchar rzf=0; // rueckzufragen
 		uchar obvi=0; // ob Konfigurationsdatei editiert werden soll
+    uchar kfzg=0; // Konfigurationsdatei-Namen ausgeben
+		uchar kschreib=0; // Konfigurationsdatei schreiben
 		uchar obvs=0;   // ob Quelldateien bearbeitet werden sollen
 		uchar keineverarbeitung=0; // wenn cronminuten geaendert werden sollen, vorher abkuerzen
     string langu; // Sprache (Anfangsbuchstabe)
@@ -1286,7 +1310,7 @@ class hcl
     string loggespfad; // Gesamtpfad, auf den dann die in kons.h verwiesene und oben definierte Variable logdt zeigt
                        // bei jeder Aenderung muss auch logdt neu gesetzt werden!
     string cmd; // string fuer command fuer Betriebssystembefehle
-		schAcl<optcl> opn=schAcl<optcl>("opn"); // Optionen
+		schAcl<optcl> opn{schAcl<optcl>("opn")}; // Optionen
 #ifdef alt
     vector<optioncl> opts;
 #endif
@@ -1359,7 +1383,7 @@ class hcl
 		virtual void virtschlussanzeige();
 	public:
 		void pruefcl(); // commandline mit omap und mit argcmv parsen
-		hcl(const int argc, const char *const *const argv,const char* const DPROG,const uchar mitcron);
+		hcl(const int argc, const char *const *const argv,const char* const DPROG,const uchar mitcron,const uchar parstreng=1);
 		~hcl();
 		void lauf();
 		int hLog(const string& text,const bool oberr=0,const short klobverb=0) const; 
@@ -1372,7 +1396,7 @@ class hcl
 		void prueftif(string aktvers);
 		void zeigkonf();
 		void reduzierlibtiff();
-		void setzbenutzer(string *user);
+		void setzbenutzer(string *const user);
 }; // class hcl
 /*
 // sollte dann unnötig werden

@@ -1,4 +1,7 @@
 // '//α' oder '//ω' als Kommentar sind nur fuer die Verwendung dieses Programms als Programmvorlage wichtig
+// vorher muss FirebirdSS 2.7 auf dem Server installiert werden:
+// in OpenSuse aus der rpm-Datei
+// vorher muß "touch /etc/SuSE-release" aufgerufen werden
 const double& versnr= //α
 #include "versdt"
 ;
@@ -99,8 +102,8 @@ void hhcl::pvirtVorgbSpeziell()
 // wird aufgerufen in lauf
 void hhcl::virtinitopt()
 { //ω
-	opn<<new optcl(/*pname*/"",/*pptr*/&anhl,/*art*/puchar,T_st_k,T_stop_l,/*TxBp*/&Tx,/*Txi*/T_DPROG_anhalten,/*wi*/1,/*Txi2*/-1,/*rottxt*/nix,/*wert*/1,/*woher*/1); //α //ω
-	opn<<new optcl(/*pname*/"",/*pptr*/&dszahl,/*art*/pdez,T_n_k,T_dszahl_l,/*TxBp*/&Tx,/*Txi*/T_Zahl_der_aufzulistenden_Datensaetze_ist_zahl_statt,/*wi*/1,/*Txi2*/-1,/*rottxt*/nix,/*wert*/-1,/*woher*/1); //α //ω
+	opn<<new optcl(/*pptr*/&anhl,/*art*/puchar,T_st_k,T_stop_l,/*TxBp*/&Tx,/*Txi*/T_DPROG_anhalten,/*wi*/1,/*Txi2*/-1,/*rottxt*/nix,/*wert*/1,/*woher*/1); //α //ω
+	opn<<new optcl(/*pptr*/&dszahl,/*art*/pdez,T_n_k,T_dszahl_l,/*TxBp*/&Tx,/*Txi*/T_Zahl_der_aufzulistenden_Datensaetze_ist_zahl_statt,/*wi*/1,/*Txi2*/-1,/*rottxt*/nix,/*wert*/-1,/*woher*/1); //α //ω
 	dhcl::virtinitopt(); //α
 } // void hhcl::virtinitopt
 
@@ -218,7 +221,7 @@ long hhcl::import_firebird(const string& fbdb,const string& fbtb,const string& m
 				fbscr[2]={fbtb+header+scriptendg,fbtb+daten+scriptendg}, // /tmp/... GL_PCK_hd.script, GL_PCK_dt.script
 				fbdat[2]={fbtb+header+datendg,fbtb+daten+datendg};       // /tmp/... GL_PCK_hd.dat, GL_PCK_dt.dat
 	size_t fzl=0,dszahl=0; // Feldzahl,Datensatzzahl
-	Feld *fdp;
+	Feld *fdp{0};
 	for(int ru=0;ru<2;ru++) {
 		mdatei ga(fbscr[ru],ios::out);
 		if (ga.is_open()) {
@@ -246,20 +249,18 @@ long hhcl::import_firebird(const string& fbdb,const string& fbtb,const string& m
 						// 1. mache Tabelle aus fbdat[0]
 						size_t i=0;
 						fdp=new Feld[fzl]; // erste und letzte Zeile leer
-						memcpy(&fdp[0],new Feld("ID","INT","10","",Tx[T_eindeutige_Identifikation],1,1),sizeof *fdp);
+						fdp[0]=new Feld("ID","INT","10","",Tx[T_eindeutige_Identifikation],1,1); // operator=
 						string zeile;
 						while (getline(gl,zeile)) {
 							if (i && i<fzl) {
 								svec zfld;
 								aufSplit(&zfld,zeile,';');
 								////					if (obverb) for(size_t j=0;j<zfld.size();j++) caus<<blau<<i<<" "<<violett<<j<<" "<<schwarz<<zfld[j]<<endl;
-								Feld *nfld;
 								if (zfld.size()>6) {
-									nfld=new Feld(zfld[1],zfld[6],zfld[3],zfld[4],"",0,0,0);
+									fdp[i]=new Feld(zfld[1],zfld[6],zfld[3],zfld[4],"",0,0,0); // operator=
 								} else {
-									nfld= new Feld(ltoan(i));
+									fdp[i]=new Feld(ltoan(i)); // operator=
 								} // 				if (zfld.size()>6)
-								memcpy(&fdp[i],nfld,sizeof *fdp);
 							} // 							if (i && i<fzl)
 							++i;
 						} // 			while (getline(gl,zeile))
@@ -332,7 +333,7 @@ long hhcl::import_firebird(const string& fbdb,const string& fbtb,const string& m
 			} // 			if (!ru)  else
 		} // 		if (ga.is_open())
 	} // 	for(int ru=0;ru<2;ru++)
-	delete[] fdp;
+//	if (fdp) delete[] fdp; // macht Abbrueche
 	/*//
 		svec rueck;
 		systemrueck("sed -n '/output/{s/[^ ]* \\([^;]*\\);/\\1/;p;q}' gl.scr",obverb,oblog,&rueck);
