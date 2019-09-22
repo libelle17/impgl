@@ -140,18 +140,6 @@ void hhcl::pvirtvorrueckfragen()
 	hLog(violetts+Tx[T_pvirtvorrueckfragen]+schwarz); //ω
 } // void hhcl::pvirtvorrueckfragen //α
 
-
-// wird aufgerufen in lauf
-void hhcl::virtrueckfragen()
-{
-	hLog(violetts+Tx[T_virtrueckfragen]+schwarz);
-	if (rzf) { //ω
-		dhcl::virtrueckfragen();
-		hcl::virtrueckfragen();
-	} // if (rzf) //α
-	//// opn.oausgeb(rot);
-} // void hhcl::virtrueckfragen()
-//ω
 //α
 // wird aufgerufen in lauf
 void hhcl::virtpruefweiteres()
@@ -191,10 +179,10 @@ void hhcl::anhalten()
 } // void hhcl::anhalten() //α
 //ω
 //α
-void hhcl::pvirtvorpruefggfmehrfach()
+void hhcl::pvirtnachrueckfragen()
 {
 	// if (initDB()) exit(schluss(10,Tx[T_Datenbank_nicht_initialisierbar_breche_ab]));  //ω
-} // void hhcl::pvirtvorpruefggfmehrfach //α
+} // void hhcl::pvirtnachrueckfragen //α
 //ω
 const string befpfad{"/opt/firebird/bin/"},
 						 isql{befpfad+"isql"}; // isql-fb
