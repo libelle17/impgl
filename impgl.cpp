@@ -1,5 +1,5 @@
 // '//α' oder '//ω' als Kommentar sind nur fuer die Verwendung dieses Programms als Programmvorlage wichtig
-// vorher muss FirebirdSS 2.7 auf dem Server installiert werden:
+// vorher muss FirebirdSS 2.1.7 auf dem Server installiert werden:
 // in OpenSuse aus der rpm-Datei
 // vorher muß "touch /etc/SuSE-release" aufgerufen werden
 const double& versnr= //α
@@ -353,37 +353,39 @@ long hhcl::import_firebird(const string& fbdb,const string& fbtb,const string& m
 // => gleich FirebirdSS 2.1 32-bit installiert lassen und verwenden, zur Sicherheit aber noch die fbk-Dateien erstellen
 void hhcl::wandle()
 {
- const string ort{"/DATA/down/neu/GL"},
- 							datei{"datenbank.zip"},
-							gbak{befpfad+"gbak"};
- const string dbname="quelle",
-			 tbname="glalle",
-			 fbtb{"GL_PCK"};
- svec erg;
- int obverb=1,oblog=0;
- systemrueck("find "+ort+" -name "+datei+" -print0 | /usr/bin/xargs -0 ls -l --time-style=full-iso | sort -k6,7|cut -d/ -f2-",obverb,oblog,&erg);
- for(size_t i=0;i<erg.size();i++) {
-  const size_t p1{erg[i].find("_2")},  // 19
-				 p2{erg[i].find('/',p1)}; // 27
-	const string qdatei{'/'+erg[i]}, // /DATA/down/neu/GL/GL_2015_04/Data/datenbank.zip
-				dnam{erg[i].substr(p1,p2-p1)}; // _2015_04
-	fLog(Tx[T_verarbeite]+violetts+qdatei+schwarz,1,1);
-	const string ausgdir{dir_name(qdatei)+"/x"},
-				 fdbalt{ausgdir+"/gelbeliste.fdb"};
-	pruefverz(ausgdir);
-	systemrueck("chmod 777 "+ausgdir);
-	struct stat statq{0};
-	if (lstat(fdbalt.c_str(),&statq)) {
-		systemrueck("7z e "+qdatei+" -y -o"+ausgdir,obverb+1,oblog);
-	}
-	systemrueck("chmod 777 -R "+ausgdir);
-	const string fbk{ort+"/gl"+dnam+".fbk"};
-	if (lstat(fbk.c_str(),&statq)) {
-		import_firebird(fdbalt,fbtb,dbname,&tbname,Tx[T_PZN_aus_gelber_Liste]);
-		systemrueck(gbak+" -b '"+fdbalt+"' '"+fbk+"' -user sysdba -pas masterke",obverb+1,oblog);
-	}
- }
-}
+	const string ort{"/DATA/down/neu/GL"},
+				datei{"datenbank.zip"},
+				gbak{befpfad+"gbak"};
+	const string dbname="quelle",
+				tbname="glalle",
+				fbtb{"GL_PCK"};
+	svec erg;
+	int obverb=1,oblog=0;
+	systemrueck("find "+ort+" -name "+datei+" -print0 | /usr/bin/xargs -0 ls -l --time-style=full-iso | sort -k6,7|cut -d/ -f2-",obverb,oblog,&erg);
+	for(size_t i=0;i<erg.size();i++) {
+		const size_t p1{erg[i].find("_2")},  // 19
+					p2{erg[i].find('/',p1)}; // 27
+		if (p1!=string::npos&&p2!=string::npos) {
+			const string qdatei{'/'+erg[i]}, // /DATA/down/neu/GL/GL_2015_04/Data/datenbank.zip
+						dnam{erg[i].substr(p1,p2-p1)}; // _2015_05
+			fLog(Tx[T_verarbeite]+violetts+qdatei+schwarz,1,1);
+			const string ausgdir{dir_name(qdatei)+"/x"},
+						fdbalt{ausgdir+"/gelbeliste.fdb"};
+			pruefverz(ausgdir);
+			systemrueck("chmod 777 "+ausgdir);
+			struct stat statq{0};
+			if (lstat(fdbalt.c_str(),&statq)) {
+				systemrueck("7z e "+qdatei+" -y -o"+ausgdir,obverb+1,oblog);
+			}
+			systemrueck("chmod 777 -R "+ausgdir);
+			const string fbk{ort+"/gl"+dnam+".fbk"};
+			if (lstat(fbk.c_str(),&statq)) {
+				import_firebird(fdbalt,fbtb,dbname,&tbname,Tx[T_PZN_aus_gelber_Liste]);
+				systemrueck(gbak+" -b '"+fdbalt+"' '"+fbk+"' -user sysdba -pas masterke",obverb+1,oblog);
+			} // 			if (lstat(fbk.c_str(),&statq))
+		} // 		if (p1!=string::npos&&p2!=string::npos)
+	} // 	for(size_t i=0;i<erg.size();i++)
+} // void hhcl::wandle
 
 void hhcl::pvirtfuehraus() //α
 { //ω
