@@ -186,17 +186,17 @@ void hhcl::pvirtnachrueckfragen()
 //ω
 const string befpfad{"/opt/firebird/bin/"},
 						 isql{befpfad+"isql"}; // isql-fb
-long hhcl::import_firebird(const string& fbdb,const string& fbtb,const string& mydb,const string *mytbp/*=0*/,const string& comment/*=nix*/)
+long hhcl::import_firebird(const string& fbdb,const string& fbtb/*GL_PCK*/,const string& mydb,const string *mytbp/*=0*/,const string& comment/*=nix*/)
 {
 	const char tz[4]{29,30,31,0}; // sehr unwahrscheinliche Zeichenfolge
 	const size_t aktc{0};
 	const string pznn{"PCK_PZN"};
-	if (!mytbp) mytbp=&fbtb;
+	if (!mytbp) mytbp=&fbtb/*GL_PCK*/;
 	svec csets;
 	csets<<"latin1";
 	csets<<"utf8";
 	string sql= "SELECT iif(r.rdb$field_position is null,0,r.rdb$field_position)||';'||iif(r.rdb$field_name is null,'',TRIM(r.RDB$FIELD_NAME))||';'||iif(r.rdb$null_flag is null,'',trim(r.rdb$null_flag))||';'||iif(f.rdb$field_length is null,0,trim(f.RDB$FIELD_LENGTH))||';'||iif(f.rdb$field_precision is null,0,trim(f.RDB$FIELD_PRECISION))||';'||iif(f.rdb$field_scale is null,'',trim(f.RDB$FIELD_SCALE))||';'||iif(f.rdb$field_type is null,'',trim(CASE f.RDB$FIELD_TYPE WHEN 261 THEN'BLOB'WHEN 14 THEN'CHAR'WHEN 40 THEN'CSTRING'WHEN 11 THEN'D_FLOAT'WHEN 27 THEN'DOUBLE'WHEN 10 THEN'FLOAT'WHEN 16 THEN'INT64'WHEN 8 THEN'INTEGER'WHEN 9 THEN'QUAD'WHEN 7 THEN'SMALLINT'WHEN 12 THEN'DATE'WHEN 13 THEN'TIME'WHEN 35 THEN'TIMESTAMP'WHEN 37 THEN'VARCHAR'ELSE'UNKNOWN'END))||';'||iif(f.rdb$field_sub_type is null,'',trim(f.RDB$FIELD_SUB_TYPE))||';'||iif(coll.rdb$collation_name is null,'',trim(coll.rdb$collation_name))||';'||iif(cset.rdb$character_set_name is \
-							 null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT JOIN RDB$FIELDS f ON r.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME LEFT JOIN RDB$COLLATIONS coll ON f.RDB$COLLATION_ID = coll.RDB$COLLATION_ID LEFT JOIN RDB$CHARACTER_SETS cset ON f.RDB$CHARACTER_SET_ID = cset.RDB$CHARACTER_SET_ID WHERE r.RDB$RELATION_NAME='"+fbtb+"' ORDER BY r.RDB$FIELD_POSITION;";
+							 null,'',trim(cset.RDB$CHARACTER_SET_NAME))||';' FROM RDB$RELATION_FIELDS r LEFT JOIN RDB$FIELDS f ON r.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME LEFT JOIN RDB$COLLATIONS coll ON f.RDB$COLLATION_ID = coll.RDB$COLLATION_ID LEFT JOIN RDB$CHARACTER_SETS cset ON f.RDB$CHARACTER_SET_ID = cset.RDB$CHARACTER_SET_ID WHERE r.RDB$RELATION_NAME='"+fbtb/*GL_PCK*/+"' ORDER BY r.RDB$FIELD_POSITION;";
 	if (My->fehnr) {
 		fLog(rots+ltoan(My->fehnr)+schwarz+Tx[T_Fehler_beim_Oeffnen_der_Datenbank]+mydb,obverb,oblog);
 		return -29;
@@ -206,8 +206,8 @@ long hhcl::import_firebird(const string& fbdb,const string& fbtb,const string& m
 	// Script für Kopf,für Daten, Kopfdaten,Tabellendaten
 	const string scriptendg{".script"},datendg{".dat"},
 				header{"_hd"},daten{"_dt"},
-				fbscr[2]={fbtb+header+scriptendg,fbtb+daten+scriptendg}, // /tmp/... GL_PCK_hd.script, GL_PCK_dt.script
-				fbdat[2]={fbtb+header+datendg,fbtb+daten+datendg};       // /tmp/... GL_PCK_hd.dat, GL_PCK_dt.dat
+				fbscr[2]={fbtb+header+scriptendg,fbtb+daten+scriptendg}, // GL_PCK_hd.script, GL_PCK_dt.script
+				fbdat[2]={fbtb+header+datendg,fbtb+daten+datendg};       // GL_PCK_hd.dat, GL_PCK_dt.dat
 	size_t fzl=0,dszahl=0; // Feldzahl,Datensatzzahl
 	Feld *fdp{0};
 	for(int ru=0;ru<2;ru++) {
@@ -355,12 +355,14 @@ void hhcl::wandle()
 {
 	const string ort{"/DATA/down/neu/GL"},
 				datei{"datenbank.zip"},
-				gbak{befpfad+"gbak"};
-	const string dbname="quelle",
-				tbname="glalle",
-				fbtb{"GL_PCK"};
+				gbak{befpfad+"gbak"},
+				dbname{"quelle"},
+				tbname{"glalle"},
+				fbtb{"GL_PCK"},
+				beavz{"/opt/firebird/gl"};
 	svec erg;
 	int obverb=1,oblog=0;
+  systemrueck("mkdir -p "+beavz,obverb,oblog);
 	systemrueck("find "+ort+" -name "+datei+" -print0 | /usr/bin/xargs -0 ls -l --time-style=full-iso | sort -k6,7|cut -d/ -f2-",obverb,oblog,&erg);
 	for(size_t i=0;i<erg.size();i++) {
 		const size_t p1{erg[i].find("_2")},  // 19
@@ -370,7 +372,8 @@ void hhcl::wandle()
 						dnam{erg[i].substr(p1,p2-p1)}; // _2015_05
 			fLog(Tx[T_verarbeite]+violetts+qdatei+schwarz,1,1);
 			const string ausgdir{dir_name(qdatei)+"/x"},
-						fdbalt{ausgdir+"/gelbeliste.fdb"};
+						gnam{"/gelbeliste.fdb"},
+						fdbalt{ausgdir+gnam/*/gelbeliste.fdb*/};
 			pruefverz(ausgdir);
 			systemrueck("chmod 777 "+ausgdir);
 			struct stat statq{0};
@@ -378,10 +381,12 @@ void hhcl::wandle()
 				systemrueck("7z e "+qdatei+" -y -o"+ausgdir,obverb+1,oblog);
 			}
 			systemrueck("chmod 777 -R "+ausgdir);
-			const string fbk{ort+"/gl"+dnam+".fbk"};
+			const string fbk{ort/*/DATA/down/neu/GL*/+"/gl"+dnam/*_2015_05*/+".fbk"};
 			if (lstat(fbk.c_str(),&statq)) {
-				import_firebird(fdbalt,fbtb,dbname,&tbname,Tx[T_PZN_aus_gelber_Liste]);
-				systemrueck(gbak+" -b '"+fdbalt+"' '"+fbk+"' -user sysdba -pas masterke",obverb+1,oblog);
+				if (!systemrueck("cp -a "+fdbalt+" "+beavz/*/opt/firebird/gl*/,obverb,oblog)) {
+					import_firebird(beavz+gnam,fbtb/*GL_PCK*/,dbname,&tbname,Tx[T_PZN_aus_gelber_Liste]);
+					systemrueck(gbak+" -b '"+beavz+gnam+"' '"+fbk+"' -user sysdba -pas masterke",obverb+1,oblog);
+				} // if (systemrueck
 			} // 			if (lstat(fbk.c_str(),&statq))
 		} // 		if (p1!=string::npos&&p2!=string::npos)
 	} // 	for(size_t i=0;i<erg.size();i++)
