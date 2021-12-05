@@ -236,7 +236,8 @@ Feld::Feld()
 }
 
 Feld::Feld(const string& name, string typ/*=string()*/, const string& lenge/*=string()*/, const string& prec/*=string()*/, 
-    const string& comment/*=string()*/, bool obind/*=0*/, bool obauto/*=0*/, bool nnull/*=0*/, const string& vdefa/*=string()*/, bool unsig/*=0*/):
+   const string& comment/*=string()*/, bool obind/*=0*/, bool obauto/*=0*/, bool nnull/*=0*/, const string& vdefa/*=string()*/, 
+	 bool unsig/*=0*/, const string& chset/*=string()*/,const string& coll/*=string()*/):
   name(name)
   ,typ(typ)
   ,lenge(lenge)
@@ -247,6 +248,8 @@ Feld::Feld(const string& name, string typ/*=string()*/, const string& lenge/*=st
   ,nnull(nnull)
   ,defa(vdefa) // Namensdifferenz hier noetig, sonst wird im Konstruktur die falsche Variable bearbeitet
   ,unsig(unsig)
+	,chset(chset)
+	,coll(coll)
 {
 	if (defa.empty()) {
 		if (obauto) {
@@ -1143,6 +1146,8 @@ int Tabelle::prueftab(const size_t aktc,int obverb/*=0*/,int oblog/*=0*/)
 								felder[i].prec.empty())?"":
                (","+felder[i].prec))
               +")"))
+						+(felder[i].chset!=""?" CHARACTER SET "+felder[i].chset:"")
+						+(felder[i].coll!=""?" COLLATE "+felder[i].coll:"")
 						+(felder[i].unsig  ?  " UNSIGNED":"")
             +(felder[i].nnull  ?  " NOT NULL":"")
             +(felder[i].defa=="NULL"||felder[i].defa=="null"||((felder[i].defa.empty()&&!felder[i].nnull)||(felder[i].obind && felder[i].obauto)||utyp.find("LONGTEXT")!=string::npos)?"":" DEFAULT '"+felder[i].defa+"'")
@@ -1182,7 +1187,7 @@ int Tabelle::prueftab(const size_t aktc,int obverb/*=0*/,int oblog/*=0*/)
 
         // Pruefung, ob Spalten hinzugefuegt werden muessen
         for(unsigned gspn=0;gspn<feldzahl;gspn++) { // geplante Spalten
-          binaer gefunden=falsch;
+          binaer gefunden{falsch};
           for(unsigned j=0;j<spzahl;j++) { // reale Spalten
             if (!strcasecmp(felder[gspn].name.c_str(),spnamen[j].c_str())) {
               gefunden=wahr;
@@ -1267,8 +1272,7 @@ uchar DB::tuerweitern(const string& tabs, const string& feld,unsigned long wleng
 {
   stringstream korr;
   string lenge;
-  korr<<"SELECT character_maximum_length, data_type,is_nullable,column_default,column_comment FROM information_schema.columns WHERE table_schema='"<<
-    dbname<<"' AND table_name='"<<tabs<<"' AND column_name='"<<feld<<"'";
+  korr<<"SELECT character_maximum_length, data_type,is_nullable,COALESCE(column_default,''),column_comment FROM information_schema.columns WHERE table_schema='"<<dbname<<"' AND table_name='"<<tabs<<"' AND column_name='"<<feld<<"'";
   RS spaltlen(this,korr.str(),aktc,obverb>1?obverb-1:0);
   if (!spaltlen.obqueryfehler) {
     char*** cerg;
@@ -1279,14 +1283,11 @@ uchar DB::tuerweitern(const string& tabs, const string& feld,unsigned long wleng
           fLog(Txd[T_Erweitere_Feld]+tabs+"."+feld+Txd[T_von]+lenge.c_str()+Txd[T_auf]+ltoan(wlength),1,1);
           korr.str(std::string()); korr.clear();
           if (*(*cerg+1) && *(*cerg+2)) {
-						const string defroh{ersetzAllezu(cjj(cerg,3),"'","\\'")}, 
-									defz{defroh.substr(0,wlength-(wlength<defroh.length()&&defroh[wlength-1]=='\\'?1:0))},
-									defa{defz.substr(0,wlength-(wlength<defz.length()&&defz[wlength-1]=='\\'?1:0))};
 						korr<<"ALTER TABLE `"<<tabs<<"` MODIFY COLUMN `"<<feld<<"` "<<*(*cerg+1)/*data_type*/<<"("<<wlength<<") "<<
-              (!strcasecmp(*(*cerg+2),"yes")?"NULL":"NOT NULL")<<" "<<(cjj(cerg,3)?string("DEFAULT '")+defa+"'":"")<<
+              (!strcasecmp(*(*cerg+2),"yes")?"NULL":"NOT NULL")<<" "<<string("DEFAULT ")+cjj(cerg,3)<<
               " COMMENT '"<<ersetzAllezu(cjj(cerg,4),"'","\\'")<<"'";
             RS spaltaend(this,korr.str(),aktc,obverb);
-            if (spaltaend.fnr==1074) {
+            if (spaltaend.fnr==1074 || spaltaend.fnr==1118) {
               korr.str(std::string()); korr.clear();
               string neufeld;
               if (!strcasecmp(*(*cerg+1),"binary")) neufeld="mediumblob";
@@ -1301,8 +1302,8 @@ uchar DB::tuerweitern(const string& tabs, const string& feld,unsigned long wleng
               else if (!strcasecmp(*(*cerg+1),"mediumblob")) neufeld="longblob";
               if (!neufeld.empty()) {
                 fLog(Txd[T_Aendere_Feld]+tabs+"."+feld+Txd[T_von]+*(*cerg+1)+Txd[T_auf]+neufeld,1,1);
-                korr<<"ALTER TABLE `"<<tabs<<"` MODIFY COLUMN `"<<feld<<"` "<<neufeld/*data_type*/<<" "<<
-                  (!strcasecmp(*(*cerg+2),"yes")?"NULL":"NOT NULL")<<" "<<(cjj(cerg,3)?string("DEFAULT '")+defa+"'":"")<<
+								korr<<"ALTER TABLE `"<<tabs<<"` MODIFY COLUMN `"<<feld<<"` "<<neufeld/*data_type*/<<" "<<
+                  (!strcasecmp(*(*cerg+2),"yes")?"NULL":"NOT NULL")<<" "<<string("DEFAULT ")+cjj(cerg,3)<<
                   " COMMENT '"<<ersetzAllezu(cjj(cerg,4),"'","\\'")<<"'";
                 RS spaltaend2(this,korr.str(),aktc,obverb);
               }
@@ -1744,7 +1745,7 @@ my_ulonglong DB::affrows(const size_t aktc) const
 
 const char *cjj(const char * const* const* cerg, const int nr)
 {
-	if (*(*cerg+nr)) return *(*cerg+nr);
+	if (cerg) if (*cerg) if (*(*cerg+nr)) return *(*cerg+nr);
 	return "";
 }
 
@@ -2503,16 +2504,16 @@ int dhcl::initDB()
 } // initDB
 
 // wird aufgerufen in autofax.pvirtnachrueckfragen
-int dhcl::pruefDB(DB **testMy, const string& db)
+int dhcl::pruefDB(DB** testMy, const string& db)
 {
 	hLog(violetts+Txk[T_pruefDB]+db+")"+schwarz);
 	unsigned fehnr{0};
-		*testMy=new DB(myDBS,host,muser,mpwd,maxconz,db,0,0,0,obverb,oblog,DB::defmycharset,DB::defmycollat,3,0);
-		fehnr=(*testMy)->fehnr;
-		if ((*testMy)->ConnError) {
-			delete (*testMy);
-			(*testMy)=0;
-		}
+  *testMy=new DB(myDBS,host,muser,mpwd,maxconz,db,0,0,0,obverb,oblog,DB::defmycharset,DB::defmycollat,3,0);
+  fehnr=(*testMy)->fehnr;
+  if ((*testMy)->ConnError) {
+    delete (*testMy);
+    (*testMy)=0;
+  }
 	return (fehnr); 
 } // pruefDB
 
