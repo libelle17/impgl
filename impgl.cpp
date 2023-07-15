@@ -256,7 +256,7 @@ long hhcl::import_firebird(const string& fbdb,const string& fbtb/*GL_PCK*/,const
 						Feld if1[]={Feld("DISPLAYNAME")}; Index i1("DISPLAYNAME",if1,sizeof if1/sizeof* if1);
 						Feld if2[]={Feld("PCK_REZEPTINFO")}; Index i2("PCK_REZEPTINFO",if2,sizeof if2/sizeof* if2);
 						Index indices[]{i0,i1,i2};
-						Tabelle taa(My,*mytbp,fdp,fzl,indices,sizeof indices/sizeof *indices,0,0,comment,"InnoDB","utf8","utf8_general_ci","DYNAMIC");
+						Tabelle taa(My,*mytbp,fdp,fzl,indices,sizeof indices/sizeof *indices,0,0,comment,"InnoDB","utf8mb4","utf8mb4_german2_ci","DYNAMIC");
 						////			if (obverb) for(size_t i=0;i<fzl;i++) caus<<blau<<i<<" '"<<schwarz<<fdp[i].name<<"' '"<<fdp[i].comment<<"'"<<endl;
 						if (taa.prueftab(obverb)) {
 							fLog(Tx[T_Fehler_beim_Erstellen_von]+*mytbp,1,1);
