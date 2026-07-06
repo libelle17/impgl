@@ -74,6 +74,8 @@ class hhcl:public dhcl
 		void wandle();
 	public: //α
 		hhcl(const int argc, const char *const *const argv);
+		// TEMP-Fix 2026-07-06: schliesst alle offenen DB-Verbindungen sauber vor exit() (sonst "Aborted connection" im MariaDB-Log)
+		void kexit(int code);
 		~hhcl();
 		friend class fsfcl;
 }; // class hhcl //ω

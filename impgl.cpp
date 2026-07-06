@@ -140,6 +140,20 @@ void hhcl::pvirtvorrueckfragen()
 	hLog(violetts+Tx[T_pvirtvorrueckfragen]+schwarz); //ω
 } // void hhcl::pvirtvorrueckfragen //α
 
+// TEMP-Fix 2026-07-06: siehe impgl.h
+void hhcl::kexit(int code)
+{
+	if (My) {
+		for (size_t i=0;i<My->conz;i++) {
+			if (My->conn[i]) {
+				mysql_close(My->conn[i]);
+				My->conn[i]=0;
+			}
+		}
+	}
+	exit(code);
+} // void hhcl::kexit(int code)
+
 //α
 // wird aufgerufen in lauf
 void hhcl::virtpruefweiteres()
@@ -147,7 +161,7 @@ void hhcl::virtpruefweiteres()
 	fLog(violetts+Tx[T_virtpruefweiteres]+schwarz,obverb,oblog); //ω
 	// if (initDB()) exit(schluss(10,Tx[T_Datenbank_nicht_initialisierbar_breche_ab])); //α //ω
 	if (initDB()) {
-		exit(schluss(10,Tx[T_Datenbank_nicht_initialisierbar_breche_ab]));
+		kexit(schluss(10,Tx[T_Datenbank_nicht_initialisierbar_breche_ab]));
 	}
 	hcl::virtpruefweiteres(); // z.Zt. leer //α
 } // void hhcl::virtpruefweiteres
